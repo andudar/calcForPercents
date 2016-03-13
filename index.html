@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <style>
+    td select,
+    td input {
+      width: 150px;
+    }
+
+    #diagram td {
+      vertical-align: bottom;
+      text-align: center;
+      padding: 10px;
+    }
+
+    #diagram div {
+      margin: auto;
+    }
+    #heightBefore, #heightAfter{
+      border:3px groove #ec891d;
+    }
+		
+  </style>
+</head>
+
+<body>
+
+
+  <h1>Calculator for percents.</h1>
+  <div>Bank name:</div>
+  <div style="height:40px;"><span id="bankName" style="color:#ec891d;font-size:15px;font-weight:bold;cursor:pointer;"></span></div>
+  <form name="calculator">
+    <table>
+      <tr>
+        <td>Sum<br/><span style="font-size:15px;color:#aeabab">*enter your sum</span></td>
+        <td>
+          <input name="money" type="text" value="10000">
+          
+        </td>
+      </tr>
+      <tr>
+        <tr>
+        <td>Percent<br/><span style="font-size:15px;color:#aeabab">*no more than 199</span></td>
+        <td>
+          <input name="percent" type="text" value="12">
+        </td>
+      </tr>
+      <tr>
+        <td>Term in monthes<br/><span style="font-size:15px;color:#aeabab">*choose in following list</span></td>
+        <td>
+          <select name="months">
+            <option value="3">3 (минимум)</option>
+            <option value="6">6 (полгода)</option>
+            <option value="12" selected>12 (год)</option>
+            <option value="18">18 (1.5 года)</option>
+            <option value="24">24 (2 года)</option>
+            <option value="30">30 (2.5 года)</option>
+            <option value="36">36 (3 года)</option>
+          </select>
+        </td>
+      </tr>
+      <tr>
+        <td>With capitalization</td>
+        <td>
+          <input name="capitalization" type="checkbox">
+        </td>
+      </tr>
+    </table>
+
+
+  </form>
+
+
+  <table id="diagram">
+    <tr>
+      <th>Before:</th>
+      <th>After:</th>
+    </tr>
+    <tr>
+      <th id="moneyBefore"></th>
+      <th id="moneyAfter"></th>
+    </tr>
+    <tr>
+      <td>
+        <div style="background: red;width:40px;height:100px" id="heightBefore"></div>
+      </td>
+      <td>
+        <div style="background:#06357a;width:40px;height:0" id="heightAfter"></div>
+      </td>
+    </tr>
+  </table>
+
+  <script>
+    // вспомогательная функция для получения символа из события keypress
+    // (вдруг понадобится))
+    function getChar(event) {
+      if (event.which == null) {
+        if (event.keyCode < 32) return null;
+        return String.fromCharCode(event.keyCode) // IE
+      }
+
+      if (event.which != 0 && event.charCode != 0) {
+        if (event.which < 32) return null;
+        return String.fromCharCode(event.which) // остальные
+      }
+
+      return null; // специальная клавиша
+    }
+// interaction with client
+
+  var name = (prompt("Please, say us your name",'') || 'our dear client');
+  bankName.innerHTML = (prompt("Please, enter your bank's name",'')|| 'bank');
+  
+  
+  // show greetings
+
+  bankName.onmouseover = function(e){
+    var tip = document.createElement('div');
+    tip.style.width = '250px';
+    tip.style.height = '45px';
+    tip.style.position = 'absolute';
+    var pos = bankName.getBoundingClientRect();
+    tip.style.left = pos.right + 10 + 'px';
+    tip.style.top = pos.top - tip.offsetHeight+ 'px';
+    tip.style.borderColor = '#3aa8b8';
+    tip.style.borderWidth = '3px';
+    tip.style.color = 'green';
+    
+    tip.innerHTML = 'this bank is working for you, ' + name + '!';
+    document.body.appendChild(tip);
+    tip.id = 'tip';
+  
+  }
+  
+  bankName.onmouseout = function(e){
+     document.body.removeChild(tip);
+  }
+  
+ // work with form and get default data
+ 
+  var form = document.forms[0];
+  var select = form.querySelector('select');
+  var input = form.querySelectorAll('input');
+  
+  
+  var sum = input[0].value;
+  
+  var percent = +input[1].value;
+ 
+  var during = null; 
+  var capital = false;
+  
+  for(var i = 0; i< select.options.length; i++) {
+      if(select.options[i].selected) during = parseInt(select.options[i].innerHTML);
+    }
+    
+  select.onchange = function(){
+    for(var i = 0; i< select.options.length; i++) {
+      if(select.options[i].selected) during = parseInt(select.options[i].innerHTML);
+    }
+    makeDiagram();
+  }
+  
+  // response for changes in form
+  
+  form.money.oninput = function(e){
+    if(isNaN(input[0].value)) return;
+    sum = input[0].value;
+    makeDiagram();
+  }
+  // prevent wrong keyboard events
+  form.money.onkeypress = function(e) {
+  
+  if (e.ctrlKey || e.altKey || e.metaKey) return;
+
+  var chr = getChar(e);
+  
+  if (chr == null) return;
+
+  if (+chr != +chr) {
+    return false;
+  }
+  };
+  
+  
+  form.percent.oninput = function(e){
+    percent = this.value;
+   
+    makeDiagram();
+  }
+  
+ 
+  // capitalization with tip
+  form.capitalization.onchange = function(e){
+  
+    capital = this.checked;
+    
+    if(capital){
+    var richer = document.createElement('div');
+    
+    richer.style.width = '100px';
+    richer.style.height = '100px';
+    richer.style.position = 'absolute';
+    var coords = form.capitalization.getBoundingClientRect();
+    
+    richer.style.left = coords.right + 'px';
+    richer.style.top = coords.top - richer.offsetHeight+ 'px';
+    richer.style.color = 'green';
+    richer.innerHTML = 'with this option you will be a little bit richer, ' + name;
+    document.body.appendChild(richer);
+    richer.id = 'rich';
+    }
+     if(!capital){
+    document.body.removeChild(rich);
+  }
+    
+    makeDiagram();
+  }
+  
+  // make calculations
+  
+  function makeDiagram(){
+   
+    var before = sum || 0;
+    
+    
+    var after;
+    if(capital){
+      after = before * Math.pow((1 + percent/100/12),during)
+      
+    }else{
+     after = before * (1 + ( percent < 10? '0.0' + percent: percent > 99? '1.' + (percent - 100): '0.' + percent) * (during/12));
+    } 
+  
+    after = Math.round(after);
+    var afterHeightPercent = (after - sum)/(sum/100);
+    heightAfter.style.height = 100 + afterHeightPercent + 'px';
+    
+    moneyBefore.innerHTML = before;
+    moneyAfter.innerHTML = after;
+    
+  }
+  // and already run calculations
+  makeDiagram();
+  </script>
+
+
+</body>
+
+</html>
